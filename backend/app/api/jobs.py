@@ -1,9 +1,43 @@
 from fastapi import APIRouter, Query, Depends, HTTPException, status
 from app.services import job_service, role_fit_service
+from app.core.supabase_client import get_supabase_admin
 from app.domain.models import JobCreate
 from app.core.auth import get_current_user, CurrentUser
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
+
+
+@router.get("/meta/skills")
+async def get_skills_list():
+    """Return all unique tech stack values from jobs for autocomplete."""
+    supabase = get_supabase_admin()
+    result = supabase.table("jobs").select("tech_stack").eq("is_active", True).execute()
+    skills = set()
+    for row in (result.data or []):
+        for tech in (row.get("tech_stack") or []):
+            skills.add(tech)
+    return sorted(skills)
+
+
+@router.get("/meta/roles")
+async def get_roles_list():
+    """Return all unique role types from jobs for autocomplete."""
+    supabase = get_supabase_admin()
+    result = supabase.table("jobs").select("role_type, title").eq("is_active", True).execute()
+    roles = set()
+    for row in (result.data or []):
+        if row.get("role_type"):
+            roles.add(row["role_type"])
+    # Also add common role titles
+    common = [
+        "Frontend Developer", "Backend Developer", "Full Stack Developer",
+        "ML Engineer", "Data Scientist", "DevOps Engineer", "Mobile Developer",
+        "Cloud Engineer", "Security Engineer", "QA Engineer", "Data Engineer",
+        "Platform Engineer", "Site Reliability Engineer", "iOS Developer",
+        "Android Developer", "Software Engineer", "Technical Lead",
+        "Engineering Manager", "Product Engineer", "AI Engineer",
+    ]
+    return sorted(set(common) | {r.replace("_", " ").title() for r in roles})
 
 
 @router.get("")

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import api from "@/services/api";
+import AutocompleteInput from "@/components/AutocompleteInput";
 import {
   User,
   Save,
@@ -103,8 +104,14 @@ export default function ProfilePage() {
   const [strengthInput, setStrengthInput] = useState("");
   const [improveInput, setImproveInput] = useState("");
 
+  // Autocomplete options
+  const [skillOptions, setSkillOptions] = useState<string[]>([]);
+  const [roleOptions, setRoleOptions] = useState<string[]>([]);
+
   useEffect(() => {
     fetchProfile();
+    api.get("/api/jobs/meta/skills").then((r) => setSkillOptions(r.data)).catch(() => {});
+    api.get("/api/jobs/meta/roles").then((r) => setRoleOptions(r.data)).catch(() => {});
   }, []);
 
   const fetchProfile = async () => {
@@ -300,35 +307,47 @@ export default function ProfilePage() {
         {/* ─── Skills ─── */}
         <Section title="Skills">
           <Field label="Primary Skills" hint="Your strongest technical skills">
-            <TagInput
-              tags={profile.primary_skills}
-              input={primarySkillInput}
-              setInput={setPrimarySkillInput}
-              onAdd={() =>
-                addTag("primary_skills", primarySkillInput, setPrimarySkillInput)
-              }
-              onRemove={(v) => removeTag("primary_skills", v)}
-              placeholder="e.g. Python, React, PostgreSQL"
-            />
+            <div>
+              {profile.primary_skills.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {profile.primary_skills.map((tag) => (
+                    <span key={tag} className="flex items-center gap-1 rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground">
+                      {tag}
+                      <button type="button" onClick={() => removeTag("primary_skills", tag)} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <AutocompleteInput
+                options={skillOptions}
+                selected={profile.primary_skills}
+                onAdd={(v) => { if (!profile.primary_skills.includes(v)) setProfile({ ...profile, primary_skills: [...profile.primary_skills, v] }); }}
+                placeholder="Search skills (e.g. Python, React)"
+              />
+            </div>
           </Field>
           <Field
             label="Secondary Skills"
             hint="Skills you're familiar with but not expert in"
           >
-            <TagInput
-              tags={profile.secondary_skills}
-              input={secondarySkillInput}
-              setInput={setSecondarySkillInput}
-              onAdd={() =>
-                addTag(
-                  "secondary_skills",
-                  secondarySkillInput,
-                  setSecondarySkillInput
-                )
-              }
-              onRemove={(v) => removeTag("secondary_skills", v)}
-              placeholder="e.g. Docker, AWS, GraphQL"
-            />
+            <div>
+              {profile.secondary_skills.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {profile.secondary_skills.map((tag) => (
+                    <span key={tag} className="flex items-center gap-1 rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground">
+                      {tag}
+                      <button type="button" onClick={() => removeTag("secondary_skills", tag)} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <AutocompleteInput
+                options={skillOptions}
+                selected={[...profile.primary_skills, ...profile.secondary_skills]}
+                onAdd={(v) => { if (!profile.secondary_skills.includes(v)) setProfile({ ...profile, secondary_skills: [...profile.secondary_skills, v] }); }}
+                placeholder="Search skills (e.g. Docker, AWS)"
+              />
+            </div>
           </Field>
           {/* Skill Experience (years per skill) */}
           {(profile.primary_skills.length > 0 || profile.secondary_skills.length > 0) && (
@@ -365,14 +384,24 @@ export default function ProfilePage() {
         {/* ─── Target Roles & Preferences ─── */}
         <Section title="Target Roles & Preferences">
           <Field label="Target Roles" hint="Ordered by preference">
-            <TagInput
-              tags={profile.target_roles}
-              input={roleInput}
-              setInput={setRoleInput}
-              onAdd={() => addTag("target_roles", roleInput, setRoleInput)}
-              onRemove={(v) => removeTag("target_roles", v)}
-              placeholder="e.g. Backend Engineer, Full Stack Developer"
-            />
+            <div>
+              {profile.target_roles.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2">
+                  {profile.target_roles.map((tag) => (
+                    <span key={tag} className="flex items-center gap-1 rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-accent-foreground">
+                      {tag}
+                      <button type="button" onClick={() => removeTag("target_roles", tag)} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              <AutocompleteInput
+                options={roleOptions}
+                selected={profile.target_roles}
+                onAdd={(v) => { if (!profile.target_roles.includes(v)) setProfile({ ...profile, target_roles: [...profile.target_roles, v] }); }}
+                placeholder="Search roles (e.g. Backend Developer)"
+              />
+            </div>
           </Field>
           <Field label="Preferred Employment Types">
             <div className="flex flex-wrap gap-2">
