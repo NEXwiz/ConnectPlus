@@ -264,7 +264,7 @@ export default function ProfilePage() {
               className="input-field"
             />
           </Field>
-          <Field label="Headline">
+          <Field label="One-liner" hint="A short tagline about you">
             <input
               type="text"
               value={profile.headline}
@@ -306,7 +306,7 @@ export default function ProfilePage() {
 
         {/* ─── Skills ─── */}
         <Section title="Skills">
-          <Field label="Primary Skills" hint="Your strongest technical skills">
+          <Field label="Skills (strongest first)" hint="Your top technical skills">
             <div>
               {profile.primary_skills.length > 0 && (
                 <div className="flex flex-wrap gap-1.5 mb-2">
@@ -327,7 +327,7 @@ export default function ProfilePage() {
             </div>
           </Field>
           <Field
-            label="Secondary Skills"
+            label="Other Skills"
             hint="Skills you're familiar with but not expert in"
           >
             <div>
@@ -460,7 +460,7 @@ export default function ProfilePage() {
             </label>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Min Salary (annual)">
+            <Field label="Min CTC (LPA)">
               <input
                 type="number"
                 value={profile.salary_min || ""}
@@ -474,7 +474,7 @@ export default function ProfilePage() {
                 className="input-field"
               />
             </Field>
-            <Field label="Max Salary (annual)">
+            <Field label="Max CTC (LPA)">
               <input
                 type="number"
                 value={profile.salary_max || ""}
@@ -491,8 +491,8 @@ export default function ProfilePage() {
           </div>
         </Section>
 
-        {/* ─── Self Assessment ─── */}
-        <Section title="Self Assessment">
+        {/* ─── Notes ─── */}
+        <Section title="Notes for Yourself">
           <Field label="Strengths" hint="What you're best at">
             <TagInput
               tags={profile.strengths}

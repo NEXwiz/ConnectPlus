@@ -74,7 +74,45 @@ async def fetch_repos(user_id: str) -> list[dict]:
         .eq("user_id", user_id)
         .execute()
     )
+
+    # Auto-add detected languages/frameworks to user's skills
+    await _auto_add_skills_from_repos(user_id, rows)
+
     return result.data or []
+
+
+# Map GitHub languages to skill names that match our job tech stacks
+LANGUAGE_TO_SKILL = {
+    "Python": "Python", "JavaScript": "JavaScript", "TypeScript": "TypeScript",
+    "Java": "Java", "Go": "Go", "Rust": "Rust", "C++": "C++", "C#": "C#",
+    "Ruby": "Ruby", "Swift": "Swift", "Kotlin": "Kotlin", "Dart": "Dart",
+    "HTML": "HTML", "CSS": "CSS", "Shell": "Linux", "Dockerfile": "Docker",
+    "HCL": "Terraform",
+}
+
+
+async def _auto_add_skills_from_repos(user_id: str, repos: list[dict]):
+    """Extract languages from repos and add missing ones to user's primary_skills."""
+    detected = set()
+    for repo in repos:
+        for lang in (repo.get("languages") or {}):
+            if lang in LANGUAGE_TO_SKILL:
+                detected.add(LANGUAGE_TO_SKILL[lang])
+
+    if not detected:
+        return
+
+    supabase = get_supabase_admin()
+    profile = supabase.table("profiles").select("primary_skills, secondary_skills").eq("id", user_id).single().execute().data
+    if not profile:
+        return
+
+    existing = set(profile.get("primary_skills") or []) | set(profile.get("secondary_skills") or [])
+    new_skills = detected - existing
+
+    if new_skills:
+        updated = (profile.get("primary_skills") or []) + sorted(new_skills)
+        supabase.table("profiles").update({"primary_skills": updated}).eq("id", user_id).execute()
 
 
 async def analyze_repo(user_id: str, project_id: str) -> dict:
