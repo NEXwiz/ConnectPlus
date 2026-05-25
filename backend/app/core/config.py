@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     GITHUB_CLIENT_ID: str = ""
     GITHUB_CLIENT_SECRET: str = ""
+    ADZUNA_APP_ID: str = ""
+    ADZUNA_APP_KEY: str = ""
     APP_ENV: str = "development"
     FRONTEND_URL: str = "http://localhost:5173"
     EMBEDDING_MODEL: str = "openai/text-embedding-3-small"

@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
-from app.api import health, jobs, users, profiles, github, cp, resume, roadmap
+from app.api import health, jobs, users, profiles, github, cp, resume, roadmap, sync
 
 
 @asynccontextmanager
@@ -36,3 +36,4 @@ app.include_router(github.router)
 app.include_router(cp.router)
 app.include_router(resume.router)
 app.include_router(roadmap.router)
+app.include_router(sync.router)
