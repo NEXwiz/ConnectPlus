@@ -250,6 +250,11 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {/* Onboarding checklist for new users */}
+      {completion && completion.progress < 80 && (
+        <OnboardingChecklist profile={profile} />
+      )}
+
       <div className="space-y-6">
         {/* ─── Basic Info ─── */}
         <Section title="Basic Info">
@@ -1019,6 +1024,42 @@ function Field({
         <p className="text-xs text-muted-foreground mb-1.5">{hint}</p>
       )}
       {children}
+    </div>
+  );
+}
+
+function OnboardingChecklist({ profile }: { profile: any }) {
+  const steps = [
+    { label: "Add your name", done: !!profile.full_name },
+    { label: "Add target roles", done: (profile.target_roles || []).length > 0 },
+    { label: "Add your skills", done: (profile.primary_skills || []).length > 0 },
+    { label: "Set experience years", done: (profile.experience_years || 0) > 0 },
+    { label: "Upload a resume", done: false }, // checked separately in ResumeSection
+    { label: "Connect GitHub", done: !!profile.github_username },
+  ];
+
+  const doneCount = steps.filter((s) => s.done).length;
+  if (doneCount === steps.length) return null;
+
+  return (
+    <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
+      <p className="text-sm font-semibold text-foreground mb-3">
+        Getting Started — {doneCount}/{steps.length} complete
+      </p>
+      <div className="space-y-2">
+        {steps.map((step) => (
+          <div key={step.label} className="flex items-center gap-2 text-sm">
+            {step.done ? (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            ) : (
+              <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
+            )}
+            <span className={step.done ? "text-muted-foreground line-through" : "text-foreground"}>
+              {step.label}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

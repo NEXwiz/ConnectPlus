@@ -4,6 +4,7 @@ from functools import lru_cache
 from app.core.config import get_settings
 
 GEMINI_EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent"
+GEMINI_GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
 
 @lru_cache()
@@ -33,13 +34,38 @@ async def generate_embedding(text: str) -> list[float]:
         return resp.json()["embedding"]["values"]
 
 
+async def gemini_chat(prompt: str, temperature: float = 0.7) -> str:
+    """LLM call via Gemini API (free tier)."""
+    settings = get_settings()
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": temperature, "maxOutputTokens": 2000},
+    }
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            f"{GEMINI_GENERATE_URL}?key={settings.GEMINI_API_KEY}",
+            json=payload,
+            timeout=60,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return data["candidates"][0]["content"]["parts"][0]["text"]
+
+
 async def chat_completion(
     messages: list[dict],
     model: str | None = None,
     temperature: float = 0.7,
     max_tokens: int = 2000,
 ) -> str:
-    """LLM call via OpenRouter."""
+    """LLM call — uses Gemini free tier, falls back to OpenRouter."""
+    # Try Gemini first (free)
+    try:
+        prompt = messages[-1]["content"] if messages else ""
+        return await gemini_chat(prompt, temperature)
+    except Exception:
+        pass
+    # Fallback to OpenRouter
     settings = get_settings()
     client = get_openrouter_client()
     response = client.chat.completions.create(

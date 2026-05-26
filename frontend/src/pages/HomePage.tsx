@@ -14,11 +14,11 @@ export default function HomePage() {
 
         {/* Hero content */}
         <div className="relative text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
+          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl backdrop-blur-sm bg-background/60 rounded-lg px-4 py-2 mx-auto w-fit">
             Find roles that{" "}
             <span className="text-primary">actually match</span> you.
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground backdrop-blur-sm bg-background/70 rounded-lg px-4 py-2 inline-block">
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground backdrop-blur-sm bg-background/80 rounded-lg px-4 py-2">
             Connect+ surfaces the right software engineering roles using semantic
             understanding — not keyword matching. Know exactly where you stand
             before you apply.

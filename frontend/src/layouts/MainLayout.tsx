@@ -160,10 +160,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
       {/* Footer */}
       <footer className="border-t border-border">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-          <p className="text-center text-sm text-muted-foreground">
-            Connect+ — Quality over quantity.
+        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-sm text-muted-foreground">
+            Built by <span className="text-foreground font-medium">Vaibhav Gupta</span> — React · FastAPI · Supabase · pgvector
           </p>
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <Link to="/about" className="hover:text-foreground transition-colors">About</Link>
+            <a href="https://github.com/NEXwiz/ConnectPlus" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
+          </div>
         </div>
       </footer>
     </div>

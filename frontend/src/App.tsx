@@ -8,6 +8,7 @@ import HomePage from "./pages/HomePage";
 import JobsPage from "./pages/JobsPage";
 import JobDetailPage from "./pages/JobDetailPage";
 import LoginPage from "./pages/LoginPage";
+import AboutPage from "./pages/AboutPage";
 import ProfilePage from "./pages/ProfilePage";
 import RoadmapPage from "./pages/RoadmapPage";
 import "./index.css";
@@ -23,6 +24,7 @@ function App() {
               <Route path="/jobs" element={<ErrorBoundary fallbackMessage="Failed to load jobs"><JobsPage /></ErrorBoundary>} />
               <Route path="/jobs/:jobId" element={<ErrorBoundary fallbackMessage="Failed to load job details"><JobDetailPage /></ErrorBoundary>} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/about" element={<AboutPage />} />
               <Route
                 path="/profile"
                 element={
