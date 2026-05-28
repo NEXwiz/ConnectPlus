@@ -34,12 +34,12 @@ async def generate_embedding(text: str) -> list[float]:
         return resp.json()["embedding"]["values"]
 
 
-async def gemini_chat(prompt: str, temperature: float = 0.7) -> str:
+async def gemini_chat(prompt: str, temperature: float = 0.7, max_tokens: int = 2000) -> str:
     """LLM call via Gemini API (free tier)."""
     settings = get_settings()
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": temperature, "maxOutputTokens": 2000},
+        "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens},
     }
     async with httpx.AsyncClient() as client:
         resp = await client.post(
@@ -58,14 +58,7 @@ async def chat_completion(
     temperature: float = 0.7,
     max_tokens: int = 2000,
 ) -> str:
-    """LLM call — uses Gemini free tier, falls back to OpenRouter."""
-    # Try Gemini first (free)
-    try:
-        prompt = messages[-1]["content"] if messages else ""
-        return await gemini_chat(prompt, temperature)
-    except Exception:
-        pass
-    # Fallback to OpenRouter
+    """LLM call via OpenRouter."""
     settings = get_settings()
     client = get_openrouter_client()
     response = client.chat.completions.create(

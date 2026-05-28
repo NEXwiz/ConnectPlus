@@ -84,13 +84,21 @@ Return ONLY valid JSON, no markdown fences."""
 
     response = await chat_completion(messages=[{"role": "user", "content": prompt}], temperature=0.4, max_tokens=1500)
 
+    # Strip markdown fences if present
+    clean = response.strip()
+    if clean.startswith("```"):
+        clean = clean.split("\n", 1)[-1]  # remove first line (```json)
+        if clean.endswith("```"):
+            clean = clean[:-3]
+        clean = clean.strip()
+
     try:
-        data = json.loads(response)
+        data = json.loads(clean)
     except json.JSONDecodeError:
-        start = response.find("{")
-        end = response.rfind("}") + 1
+        start = clean.find("{")
+        end = clean.rfind("}") + 1
         if start >= 0 and end > start:
-            data = json.loads(response[start:end])
+            data = json.loads(clean[start:end])
         else:
             raise ValueError("Failed to generate roadmap. Please try again.")
 
