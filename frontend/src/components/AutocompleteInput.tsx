@@ -40,15 +40,15 @@ export default function AutocompleteInput({ options, selected, onAdd, placeholde
         onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)}
         placeholder={placeholder || "Search..."}
-        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-shadow"
+        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary/50 transition-all"
       />
       {open && filtered.length > 0 && (
-        <ul className="absolute z-50 mt-1 w-full max-h-48 overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
+        <ul className="absolute z-50 mt-1.5 w-full max-h-52 overflow-y-auto rounded-xl border border-border bg-card p-1 shadow-xl shadow-black/5 backdrop-blur-sm">
           {filtered.map((item) => (
             <li
               key={item}
               onClick={() => handleSelect(item)}
-              className="px-3 py-2 text-sm text-foreground cursor-pointer hover:bg-accent transition-colors"
+              className="px-3 py-2 text-sm text-foreground cursor-pointer rounded-lg hover:bg-primary/10 hover:text-primary transition-colors"
             >
               {item}
             </li>
@@ -56,8 +56,8 @@ export default function AutocompleteInput({ options, selected, onAdd, placeholde
         </ul>
       )}
       {open && query.trim() && filtered.length === 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-border bg-card shadow-lg px-3 py-2 text-sm text-muted-foreground">
-          No matches found
+        <div className="absolute z-50 mt-1.5 w-full rounded-xl border border-border bg-card p-1 shadow-xl shadow-black/5">
+          <p className="px-3 py-2 text-sm text-muted-foreground">No matches found</p>
         </div>
       )}
     </div>

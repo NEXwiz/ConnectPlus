@@ -10,7 +10,8 @@ router = APIRouter(prefix="/api/profiles", tags=["profiles"])
 async def get_profile(user: CurrentUser = Depends(get_current_user)):
     profile = await profile_service.get_profile(user.id)
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        # Auto-create profile for new users
+        profile = await profile_service.create_blank_profile(user.id, user.email)
     return profile
 
 
@@ -26,5 +27,5 @@ async def update_profile(data: ProfileUpdate, user: CurrentUser = Depends(get_cu
 async def get_completion(user: CurrentUser = Depends(get_current_user)):
     profile = await profile_service.get_profile(user.id)
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        profile = await profile_service.create_blank_profile(user.id, user.email)
     return profile_service.calculate_completion(profile)

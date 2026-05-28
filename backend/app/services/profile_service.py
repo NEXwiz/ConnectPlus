@@ -14,11 +14,19 @@ COMPLETION_FIELDS = {
 
 async def get_profile(user_id: str) -> dict | None:
     supabase = get_supabase_admin()
-    result = supabase.table("profiles").select("*").eq("id", user_id).single().execute()
-    data = result.data
-    if data:
-        data.pop("embedding", None)
+    result = supabase.table("profiles").select("*").eq("id", user_id).limit(1).execute()
+    if not result.data:
+        return None
+    data = result.data[0]
+    data.pop("embedding", None)
     return data
+
+
+async def create_blank_profile(user_id: str, email: str) -> dict:
+    supabase = get_supabase_admin()
+    row = {"id": user_id, "email": email}
+    result = supabase.table("profiles").upsert(row, on_conflict="id").execute()
+    return result.data[0] if result.data else row
 
 
 async def update_profile(user_id: str, updates: dict) -> dict:
