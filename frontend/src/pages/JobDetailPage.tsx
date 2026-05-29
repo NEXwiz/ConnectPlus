@@ -251,6 +251,7 @@ export default function JobDetailPage() {
 
       {/* Resume Tailoring */}
       {user && profileComplete && <ResumeTailoring jobId={job.id} />}
+      {user && profileComplete && <ResumeGenerator jobId={job.id} />}
     </div>
   );
 }
@@ -369,6 +370,101 @@ function ResumeTailoring({ jobId }: { jobId: string }) {
       </button>
       <p className="text-xs text-muted-foreground mt-2">
         Analyzes your resume against this job's requirements
+      </p>
+    </div>
+  );
+}
+
+
+function ResumeGenerator({ jobId }: { jobId: string }) {
+  const [generating, setGenerating] = useState(false);
+  const [result, setResult] = useState<{ tex_content: string; job_title: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setError(null);
+    try {
+      const { data } = await api.post(`/api/resumes/generate/${jobId}`);
+      setResult(data);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Generation failed.");
+    }
+    setGenerating(false);
+  };
+
+  const handleDownload = () => {
+    if (!result) return;
+    const blob = new Blob([result.tex_content], { type: "application/x-tex" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `resume_${result.job_title.replace(/\s+/g, "_").toLowerCase()}.tex`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleOverleaf = () => {
+    if (!result) return;
+    const blob = new Blob([result.tex_content], { type: "application/x-tex" });
+    const url = URL.createObjectURL(blob);
+    // Overleaf doesn't support data URIs directly; use their /docs endpoint with encoded content
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "https://www.overleaf.com/docs";
+    form.target = "_blank";
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = "snip";
+    input.value = result.tex_content;
+    form.appendChild(input);
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+    URL.revokeObjectURL(url);
+  };
+
+  if (result) {
+    return (
+      <div className="mt-4 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20 p-5">
+        <div className="flex items-center gap-2 mb-3">
+          <FileText className="h-5 w-5 text-green-600" />
+          <span className="font-semibold text-foreground">Resume Generated</span>
+        </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          Tailored for: {result.job_title}
+        </p>
+        <div className="flex gap-3">
+          <button
+            onClick={handleDownload}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Download .tex
+          </button>
+          <button
+            onClick={handleOverleaf}
+            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
+          >
+            Open in Overleaf
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border border-border bg-card p-5 text-center">
+      {error && <p className="text-sm text-destructive mb-3">{error}</p>}
+      <button
+        onClick={handleGenerate}
+        disabled={generating}
+        className="inline-flex items-center gap-2 rounded-lg border border-primary text-primary px-5 py-2.5 text-sm font-semibold hover:bg-primary/10 disabled:opacity-50 transition-colors"
+      >
+        {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+        {generating ? "Generating..." : "Generate Tailored Resume"}
+      </button>
+      <p className="text-xs text-muted-foreground mt-2">
+        Creates a LaTeX resume optimized for this role
       </p>
     </div>
   );

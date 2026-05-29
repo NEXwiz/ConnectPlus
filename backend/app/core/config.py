@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_SECRET: str = ""
     ADZUNA_APP_ID: str = ""
     ADZUNA_APP_KEY: str = ""
+    GROQ_API_KEY: str = ""
     APP_ENV: str = "development"
     FRONTEND_URL: str = "http://localhost:5173"
     EMBEDDING_MODEL: str = "openai/text-embedding-3-small"

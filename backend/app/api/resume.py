@@ -1,6 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, status
 from app.core.auth import get_current_user, get_optional_user, CurrentUser
 from app.services import resume_service
+from app.services.resume_pipeline import generate_tailored_resume
 
 router = APIRouter(prefix="/api/resumes", tags=["resumes"])
 
@@ -52,3 +53,13 @@ async def tailor_resume(job_id: str, user: CurrentUser = Depends(get_current_use
 async def get_trends(user: CurrentUser | None = Depends(get_optional_user)):
     user_id = user.id if user else None
     return await resume_service.get_hiring_trends(user_id)
+
+
+@router.post("/generate/{job_id}")
+async def generate_resume(job_id: str, user: CurrentUser = Depends(get_current_user)):
+    try:
+        return await generate_tailored_resume(user.id, job_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Generation failed: {str(e)}")

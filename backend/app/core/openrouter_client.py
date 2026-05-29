@@ -58,8 +58,22 @@ async def chat_completion(
     temperature: float = 0.7,
     max_tokens: int = 2000,
 ) -> str:
-    """LLM call via OpenRouter."""
+    """LLM call — uses Groq (free), falls back to OpenRouter."""
     settings = get_settings()
+    # Try Groq first (free tier)
+    if settings.GROQ_API_KEY:
+        try:
+            groq = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=settings.GROQ_API_KEY)
+            response = groq.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            return response.choices[0].message.content
+        except Exception:
+            pass
+    # Fallback to OpenRouter
     client = get_openrouter_client()
     response = client.chat.completions.create(
         model=model or settings.LLM_MODEL,
