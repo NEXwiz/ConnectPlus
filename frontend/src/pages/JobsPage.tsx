@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Briefcase, Search, SlidersHorizontal } from "lucide-react";
+import { Briefcase, Search, SlidersHorizontal, Sparkles } from "lucide-react";
 import JobCard from "@/components/JobCard";
 import JobFilters from "@/components/JobFilters";
 import SearchBar from "@/components/SearchBar";
@@ -45,6 +45,12 @@ export default function JobsPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [forYou, setForYou] = useState<Job[]>(() => {
+    const cached = sessionStorage.getItem("forYouJobs");
+    return cached ? JSON.parse(cached) : [];
+  });
+  const [forYouLoading, setForYouLoading] = useState(() => !sessionStorage.getItem("forYouJobs"));
+  const [viewMode, setViewMode] = useState<"all" | "foryou">("all");
   const limit = 20;
 
   // Fetch jobs with current filters
@@ -124,23 +130,74 @@ export default function JobsPage() {
     }).catch(() => {});
   }, [jobs, user, profileComplete]);
 
+  useEffect(() => {
+    if (!user || !profileComplete) return;
+    const cached = sessionStorage.getItem("forYouJobs");
+    if (cached) {
+      setForYou(JSON.parse(cached));
+      setForYouLoading(false);
+      return;
+    }
+    setForYouLoading(true);
+    api.get("/api/jobs/for-you").then((r) => {
+      const jobs = r.data.jobs || [];
+      setForYou(jobs);
+      sessionStorage.setItem("forYouJobs", JSON.stringify(jobs));
+    }).catch(() => {}).finally(() => setForYouLoading(false));
+  }, [user, profileComplete]);
+
   return (
     <div className="animate-fade-in">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <Briefcase className="h-6 w-6 text-primary" />
-        <h1 className="text-2xl font-bold text-foreground">Jobs</h1>
-        {!searchMode && (
-          <span className="text-sm text-muted-foreground">
-            {total} roles available
-          </span>
-        )}
-        {searchMode && (
-          <span className="text-sm text-muted-foreground">
-            {jobs.length} results for "{searchQuery}"
-          </span>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <Briefcase className="h-6 w-6 text-primary" />
+          <h1 className="text-2xl font-bold text-foreground">Jobs</h1>
+          {viewMode === "all" && !searchMode && (
+            <span className="text-sm text-muted-foreground">{total} roles available</span>
+          )}
+          {viewMode === "all" && searchMode && (
+            <span className="text-sm text-muted-foreground">{jobs.length} results for "{searchQuery}"</span>
+          )}
+          {viewMode === "foryou" && (
+            <span className="text-sm text-muted-foreground">{forYou.length} matches</span>
+          )}
+        </div>
+        {user && profileComplete && (
+          <div className="flex rounded-lg border border-border overflow-hidden">
+            <button
+              onClick={() => setViewMode("all")}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors ${viewMode === "all" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              All Jobs
+            </button>
+            <button
+              onClick={() => setViewMode("foryou")}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors flex items-center gap-1 ${viewMode === "foryou" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              <Sparkles className="h-3 w-3" />
+              For You
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Jobs for You */}
+      {forYou.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-semibold text-foreground">Recommended for You</h2>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
+            {forYou.slice(0, 6).map((job) => (
+              <div key={job.id} className="min-w-[280px] flex-shrink-0">
+                <JobCard {...job} similarity={job.similarity} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Search bar */}
       <div className="mb-6 flex gap-2">
@@ -187,7 +244,23 @@ export default function JobsPage() {
 
         {/* Job list */}
         <div>
-          {loading ? (
+          {viewMode === "foryou" ? (
+            forYouLoading ? (
+              <JobListSkeleton count={3} />
+            ) : forYou.length === 0 ? (
+              <EmptyState
+                icon={Sparkles}
+                title="No recommendations yet"
+                description="Add more skills and target roles to your profile for better matches."
+              />
+            ) : (
+              <div className="space-y-3">
+                {forYou.map((job) => (
+                  <JobCard key={job.id} {...job} similarity={job.similarity} />
+                ))}
+              </div>
+            )
+          ) : loading ? (
             <JobListSkeleton />
           ) : jobs.length === 0 ? (
             <EmptyState
@@ -208,8 +281,8 @@ export default function JobsPage() {
             </div>
           )}
 
-          {/* Pagination (only in list mode) */}
-          {!searchMode && total > limit && (
+          {/* Pagination (only in all jobs mode) */}
+          {viewMode === "all" && !searchMode && total > limit && (
             <div className="mt-6 flex items-center justify-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}

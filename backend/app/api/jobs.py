@@ -1,10 +1,41 @@
 from fastapi import APIRouter, Query, Depends, HTTPException, status
 from app.services import job_service, role_fit_service
 from app.core.supabase_client import get_supabase_admin
+from app.core.openrouter_client import generate_embedding
 from app.domain.models import JobCreate
-from app.core.auth import get_current_user, CurrentUser
+from app.core.auth import get_current_user, get_optional_user, CurrentUser
 
 router = APIRouter(prefix="/api/jobs", tags=["jobs"])
+
+
+@router.get("/for-you")
+async def jobs_for_you(user: CurrentUser = Depends(get_current_user)):
+    """RAG: embed user profile and match against jobs via pgvector."""
+    supabase = get_supabase_admin()
+    profile = supabase.table("profiles").select("primary_skills, secondary_skills, target_roles, experience_years").eq("id", user.id).limit(1).execute()
+    if not profile.data:
+        return {"jobs": []}
+
+    p = profile.data[0]
+    skills = (p.get("primary_skills") or []) + (p.get("secondary_skills") or [])
+    roles = p.get("target_roles") or []
+    exp = p.get("experience_years") or 0
+
+    if not skills and not roles:
+        return {"jobs": []}
+
+    # Build profile text for embedding
+    profile_text = f"Skills: {', '.join(skills)}. Target roles: {', '.join(roles)}. Experience: {exp} years."
+
+    # Embed and match
+    embedding = await generate_embedding(profile_text)
+    result = supabase.rpc("match_jobs", {
+        "query_embedding": embedding,
+        "match_threshold": 0.25,
+        "match_count": 10,
+    }).execute()
+
+    return {"jobs": result.data or []}
 
 
 @router.get("/meta/skills")
