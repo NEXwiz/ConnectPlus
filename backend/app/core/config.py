@@ -14,6 +14,8 @@ class Settings(BaseSettings):
     ADZUNA_APP_ID: str = ""
     ADZUNA_APP_KEY: str = ""
     GROQ_API_KEY: str = ""
+    LANGFUSE_PUBLIC_KEY: str = ""
+    LANGFUSE_SECRET_KEY: str = ""
     APP_ENV: str = "development"
     FRONTEND_URL: str = "http://localhost:5173"
     EMBEDDING_MODEL: str = "openai/text-embedding-3-small"
@@ -24,6 +26,7 @@ class Settings(BaseSettings):
         "env_file": ".env",
         "env_file_encoding": "utf-8",
         "case_sensitive": True,
+        "extra": "ignore",
     }
 
 

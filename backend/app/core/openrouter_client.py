@@ -2,6 +2,7 @@ import httpx
 from openai import OpenAI
 from functools import lru_cache
 from app.core.config import get_settings
+from langfuse.openai import openai
 
 GEMINI_EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent"
 GEMINI_GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
@@ -13,6 +14,18 @@ def get_openrouter_client() -> OpenAI:
     return OpenAI(
         base_url="https://openrouter.ai/api/v1",
         api_key=settings.OPENROUTER_API_KEY,
+    )
+
+
+@lru_cache()
+def get_groq_client():
+    """Groq client wrapped with Langfuse tracing."""
+    settings = get_settings()
+    if not settings.GROQ_API_KEY:
+        return None
+    return openai.OpenAI(
+        base_url="https://api.groq.com/openai/v1",
+        api_key=settings.GROQ_API_KEY,
     )
 
 
@@ -34,36 +47,19 @@ async def generate_embedding(text: str) -> list[float]:
         return resp.json()["embedding"]["values"]
 
 
-async def gemini_chat(prompt: str, temperature: float = 0.7, max_tokens: int = 2000) -> str:
-    """LLM call via Gemini API (free tier)."""
-    settings = get_settings()
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens},
-    }
-    async with httpx.AsyncClient() as client:
-        resp = await client.post(
-            f"{GEMINI_GENERATE_URL}?key={settings.GEMINI_API_KEY}",
-            json=payload,
-            timeout=60,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return data["candidates"][0]["content"]["parts"][0]["text"]
-
-
 async def chat_completion(
     messages: list[dict],
     model: str | None = None,
     temperature: float = 0.7,
     max_tokens: int = 2000,
 ) -> str:
-    """LLM call — uses Groq (free), falls back to OpenRouter."""
+    """LLM call — uses Groq (free), falls back to OpenRouter. Auto-traced by Langfuse."""
     settings = get_settings()
-    # Try Groq first (free tier)
-    if settings.GROQ_API_KEY:
+
+    # Try Groq first (free tier, auto-traced via langfuse.openai wrapper)
+    groq = get_groq_client()
+    if groq:
         try:
-            groq = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=settings.GROQ_API_KEY)
             response = groq.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=messages,
@@ -73,6 +69,7 @@ async def chat_completion(
             return response.choices[0].message.content
         except Exception:
             pass
+
     # Fallback to OpenRouter
     client = get_openrouter_client()
     response = client.chat.completions.create(
