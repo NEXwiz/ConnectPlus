@@ -378,7 +378,7 @@ function ResumeTailoring({ jobId }: { jobId: string }) {
 
 function ResumeGenerator({ jobId }: { jobId: string }) {
   const [generating, setGenerating] = useState(false);
-  const [result, setResult] = useState<{ tex_content: string; job_title: string } | null>(null);
+  const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
@@ -406,9 +406,6 @@ function ResumeGenerator({ jobId }: { jobId: string }) {
 
   const handleOverleaf = () => {
     if (!result) return;
-    const blob = new Blob([result.tex_content], { type: "application/x-tex" });
-    const url = URL.createObjectURL(blob);
-    // Overleaf doesn't support data URIs directly; use their /docs endpoint with encoded content
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "https://www.overleaf.com/docs";
@@ -421,30 +418,44 @@ function ResumeGenerator({ jobId }: { jobId: string }) {
     document.body.appendChild(form);
     form.submit();
     document.body.removeChild(form);
-    URL.revokeObjectURL(url);
   };
 
   if (result) {
+    const gap = result.gap_analysis;
+    const isPivot = gap?.gap_type === "career_pivot";
+
     return (
-      <div className="mt-4 rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20 p-5">
+      <div className={cn("mt-4 rounded-xl border p-5", isPivot ? "border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/20" : "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950/20")}>
         <div className="flex items-center gap-2 mb-3">
-          <FileText className="h-5 w-5 text-green-600" />
+          <FileText className={cn("h-5 w-5", isPivot ? "text-amber-600" : "text-green-600")} />
           <span className="font-semibold text-foreground">Resume Generated</span>
+          {isPivot && <span className="text-xs bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200 px-2 py-0.5 rounded-full">Career Pivot</span>}
         </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          Tailored for: {result.job_title}
-        </p>
+
+        {gap && (
+          <div className="mb-4 text-xs space-y-1">
+            <p className="text-muted-foreground">{gap.reasoning}</p>
+            {gap.transferable_skills?.length > 0 && (
+              <p><span className="font-medium text-green-700 dark:text-green-400">Transferable:</span> {gap.transferable_skills.join(", ")}</p>
+            )}
+            {gap.missing_skills?.length > 0 && (
+              <p><span className="font-medium text-red-700 dark:text-red-400">Missing:</span> {gap.missing_skills.join(", ")}</p>
+            )}
+          </div>
+        )}
+
+        {isPivot && (
+          <div className="mb-4 rounded-lg bg-amber-100 dark:bg-amber-900/30 px-3 py-2 text-xs text-amber-800 dark:text-amber-300">
+            ⚠️ This resume includes suggested projects marked [SUGGESTED]. Complete them before applying to strengthen your application.
+          </div>
+        )}
+
+        <p className="text-sm text-muted-foreground mb-4">Tailored for: {result.job_title}</p>
         <div className="flex gap-3">
-          <button
-            onClick={handleDownload}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-          >
+          <button onClick={handleDownload} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors">
             Download .tex
           </button>
-          <button
-            onClick={handleOverleaf}
-            className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors"
-          >
+          <button onClick={handleOverleaf} className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent transition-colors">
             Open in Overleaf
           </button>
         </div>
